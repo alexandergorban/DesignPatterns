@@ -15,12 +15,14 @@ namespace StateDesignPattern.Logic
         public int TicketCount { get; set; }
         public int BookingID { get; set; }
 
-        private CancellationTokenSource cancelToken;
-        private bool isNew;
+        private CancellationTokenSource _cancelToken;
+        private bool _isNew;
+        private bool _isPending;
+        private bool _isBooked;
 
         public Booking(MainWindow view)
         {
-            isNew = true;
+            _isNew = true;
             View = view;
             BookingID = new Random().Next();
             ShowState("New");
@@ -29,16 +31,39 @@ namespace StateDesignPattern.Logic
 
         public void SubmitDetails(string attendee, int ticketCount)
         {
+            if (_isNew)
+            {
+                _isNew = false;
+                _isPending = true;
 
+                Attendee = attendee;
+                TicketCount = ticketCount;
+
+                _cancelToken = new CancellationTokenSource();
+
+                StaticFunctions.ProcessBooking(this, ProcessingComplete, _cancelToken);
+
+                ShowState("Pending");
+                View.ShowStatusPage("Processing Booking");
+            }
         }
 
         public void Cancel()
         {
-            if (isNew)
+            if (_isNew)
             {
                 ShowState("Closed");
                 View.ShowStatusPage("Canceled by user");
-                isNew = false;
+                _isNew = false;
+            } else if (_isPending)
+            {
+                _cancelToken.Cancel();
+            }
+            else if (_isBooked)
+            {
+                ShowState("Closed");
+                View.ShowStatusPage("Booking canceled: Expect a refund");
+                _isBooked = false;
             }
             else
             {
@@ -48,19 +73,28 @@ namespace StateDesignPattern.Logic
 
         public void DatePassed()
         {
-            if (isNew)
+            if (_isNew)
             {
                 ShowState("Closed");
                 View.ShowStatusPage("Booking expired");
-                isNew = false;
+                _isNew = false;
+            }
+            else if (_isBooked)
+            {
+                ShowState("Closed");
+                View.ShowStatusPage("We hope you enjoyed the event");
+                _isBooked = false;
             }
         }
 
         public void ProcessingComplete(Booking booking, ProcessingResult result)
         {
+            _isPending = false;
+
             switch (result)
             {
                 case ProcessingResult.Sucess:
+                    _isBooked = true;
                     ShowState("Booked");
                     View.ShowStatusPage("Enjoy the Event");
                     break;
@@ -68,6 +102,7 @@ namespace StateDesignPattern.Logic
                     View.ShowProcessingError();
                     Attendee = string.Empty;
                     BookingID = new Random().Next();
+                    _isNew = true;
                     ShowState("New");
                     View.ShowEntryPage();
                     break;
