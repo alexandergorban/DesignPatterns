@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using StrategyPattern.Business.Models;
 using StrategyPattern.Business.Strategies.Invoice;
 using StrategyPattern.Business.Strategies.SalesTax;
@@ -10,6 +11,58 @@ namespace StrategyPattern
     {
         static void Main(string[] args)
         {
+            #region Debug
+
+            var orders = new[] {
+                new Order
+                {
+                    ShippingDetails = new ShippingDetails
+                    {
+                        OriginCountry = "Sweden"
+                    }
+                },
+                new Order
+                {
+                    ShippingDetails = new ShippingDetails
+                    {
+                        OriginCountry = "USA"
+                    }
+                },
+                new Order
+                {
+                    ShippingDetails = new ShippingDetails
+                    {
+                        OriginCountry = "Sweden"
+                    }
+                },
+                new Order
+                {
+                    ShippingDetails = new ShippingDetails
+                    {
+                        OriginCountry = "USA"
+                    }
+                },
+                new Order
+                {
+                    ShippingDetails = new ShippingDetails
+                    {
+                        OriginCountry = "Singapore"
+                    }
+                }
+            };
+
+            Print(orders);
+
+            Console.WriteLine();
+            Console.WriteLine("Sorting..");
+            Console.WriteLine();
+
+            Array.Sort(orders, new OrderAmountComparer());
+
+            Print(orders);
+
+            #endregion
+
             Console.WriteLine("Please select an origin country: ");
             var origin = Console.ReadLine()?.Trim();
 
@@ -45,7 +98,7 @@ namespace StrategyPattern
             };
 
             order.SelectedPayments.Add(new Payment() { PaymentProvider = PaymentProvider.Invoice });
-            order.LineItems.Add(new Item("CSHARP", "name", 10, ItemType.Service), 10 );
+            order.LineItems.Add(new Item("CSHARP", "name", 10, ItemType.Service), 10);
 
             Console.WriteLine(order.GetTax());
 
@@ -92,5 +145,58 @@ namespace StrategyPattern
                 throw new Exception("Unsupported region");
             }
         }
+
+        #region Debug
+
+        static void Print(IEnumerable<Order> orders)
+        {
+            foreach (var order in orders)
+            {
+                Console.WriteLine(order.ShippingDetails.OriginCountry);
+            }
+        }
+
+        #endregion
     }
+
+    #region Debug
+
+    public class OrderAmountComparer : IComparer<Order>
+    {
+        public int Compare(Order x, Order y)
+        {
+            var xTotal = x.TotalPrice;
+            var yTotal = y.TotalPrice;
+            if (xTotal == yTotal)
+            {
+                return 0;
+            }
+            else if (xTotal > yTotal)
+            {
+                return 1;
+            }
+
+            return -1;
+        }
+    }
+    public class OrderOriginComparer : IComparer<Order>
+    {
+        public int Compare(Order x, Order y)
+        {
+            var xDest = x.ShippingDetails.OriginCountry.ToLowerInvariant();
+            var yDest = y.ShippingDetails.OriginCountry.ToLowerInvariant();
+            if (xDest == yDest)
+            {
+                return 0;
+            }
+            else if (xDest[0] > yDest[0])
+            {
+                return 1;
+            }
+
+            return -1;
+        }
+    }
+
+    #endregion
 }
