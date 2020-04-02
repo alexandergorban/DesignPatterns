@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace Strategy_Pattern_First_Look.Business.Models
+namespace StrategyPattern.Business.Models
 {
     public class Order
     {
