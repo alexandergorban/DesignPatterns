@@ -2,6 +2,7 @@
 using StrategyPattern.Business.Models;
 using StrategyPattern.Business.Strategies.Invoice;
 using StrategyPattern.Business.Strategies.SalesTax;
+using StrategyPattern.Business.Strategies.Shipping;
 
 namespace StrategyPattern
 {
@@ -9,6 +10,28 @@ namespace StrategyPattern
     {
         static void Main(string[] args)
         {
+            Console.WriteLine("Please select an origin country: ");
+            var origin = Console.ReadLine()?.Trim();
+
+            Console.WriteLine("Please select a destination country: ");
+            var destination = Console.ReadLine()?.Trim();
+
+            Console.WriteLine("Choose one of the following shipping providers.");
+            Console.WriteLine("1. PostNord");
+            Console.WriteLine("2. DHL");
+            Console.WriteLine("3. USPS");
+            Console.WriteLine("4. Fedex");
+            Console.WriteLine("5. UPS");
+            Console.WriteLine("Select shipping provider: ");
+            var provider = Convert.ToInt32(Console.ReadLine()?.Trim());
+
+            Console.WriteLine("Choose one of the following invoice delivery options.");
+            Console.WriteLine("1. E-mail");
+            Console.WriteLine("2. File");
+            Console.WriteLine("3. Mail");
+            Console.WriteLine("Select invoice delivery options: ");
+            var invoiceOption = Convert.ToInt32(Console.ReadLine()?.Trim());
+
             var order = new Order
             {
                 ShippingDetails = new ShippingDetails
@@ -16,29 +39,58 @@ namespace StrategyPattern
                     OriginCountry = "Sweden",
                     DestinationCountry = "Sweden"
                 },
-                SalesTaxStrategy = new SwedenSalesTaxStrategy()
+                SalesTaxStrategy = GetSalesTaxStrategyFor(origin),
+                InvoiceStrategy = GetInvoiceStrategyFor(invoiceOption),
+                ShippingStrategy = GetShippingStrategyFor(provider)
             };
 
-            var destination = order.ShippingDetails.DestinationCountry.ToLowerInvariant();
-
-            if (destination == "sweden")
-            {
-                order.SalesTaxStrategy = new SwedenSalesTaxStrategy();
-            }
-            else if (destination == "us")
-            {
-                order.SalesTaxStrategy = new UsaStateSalesTaxStrategy();
-            }
-
-            order.LineItems.Add(new Item("CSHARP_SMORGASBORD", "C# Smorgasbord", 100m, ItemType.Literature), 1);
-            order.LineItems.Add(new Item("CONSULTING", "Building a website", 100m, ItemType.Service), 1);
-
             order.SelectedPayments.Add(new Payment() { PaymentProvider = PaymentProvider.Invoice });
+            order.LineItems.Add(new Item("CSHARP", "name", 10, ItemType.Service), 10 );
 
-            Console.WriteLine(order.GetTax(new SwedenSalesTaxStrategy()));
+            Console.WriteLine(order.GetTax());
 
             order.InvoiceStrategy = new FileInvoiceStrategy();
             order.FinalizeOrder();
+        }
+
+        private static IShippingStrategy GetShippingStrategyFor(in int provider)
+        {
+            switch (provider)
+            {
+                case 1: return new PostNordShippingStrategy();
+                case 2: return new DhlShippingStrategy();
+                case 3: return new UspsShippingStrategy();
+                case 4: return new FedexShippingStrategy();
+                case 5: return new UpsShippingStrategy();
+                default: throw new Exception("Unsupported shipping method");
+            }
+        }
+
+        private static IInvoiceStrategy GetInvoiceStrategyFor(in int invoiceOption)
+        {
+            switch (invoiceOption)
+            {
+                case 1: return new EmailInvoiceStrategy();
+                case 2: return new FileInvoiceStrategy();
+                case 3: return new PrintOnDemandInvoiceStrategy();
+                default: throw new Exception("Unsupported invoice delivery option");
+            }
+        }
+
+        private static ISalesTaxStrategy GetSalesTaxStrategyFor(string origin)
+        {
+            if (origin.ToLowerInvariant() == "sweden")
+            {
+                return new SwedenSalesTaxStrategy();
+            }
+            else if (origin.ToLowerInvariant() == "use")
+            {
+                return new UsaStateSalesTaxStrategy();
+            }
+            else
+            {
+                throw new Exception("Unsupported region");
+            }
         }
     }
 }
