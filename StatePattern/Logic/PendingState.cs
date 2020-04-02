@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using StateDesignPattern.Logic;
 
-namespace State_Design_Pattern.Logic
+namespace StateDesignPattern.Logic
 {
     class PendingState : BookingState
     {
